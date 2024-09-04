@@ -1,3 +1,4 @@
+import React from "react";
 // StarRating component for displaying dynamic stars based on rating
 export function StarRating({ rating }: { rating: number }) {
   const fullStars = Math.floor(rating);

@@ -1,7 +1,12 @@
 "use client";
+import React from "react";
 import { createContext, useContext, useState, ReactNode } from "react";
 
 interface Book {
+  isbn13: string;
+  isbn10: string;
+  year: number;
+  categories: never[];
   isbn: string;
   title: string;
   subtitle: string;

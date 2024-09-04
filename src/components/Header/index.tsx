@@ -1,6 +1,6 @@
+import React from "react";
 import Link from "next/link";
-import { FaAd, FaHome, FaPlus } from "react-icons/fa"; // Importing a home icon from react-icons
-import { FaA } from "react-icons/fa6";
+import { FaHome, FaPlus } from "react-icons/fa"; // Importing a home icon from react-icons
 
 export function Header() {
   return (

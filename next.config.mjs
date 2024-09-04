@@ -11,6 +11,14 @@ const nextConfig = {
       "git-scm.com",
       "media.springernature.com",
     ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "example.com", // Replace with your image host domain
+        port: "", // You can leave this empty for the default port
+        pathname: "/**", // Allow all paths
+      },
+    ],
   },
 };
 

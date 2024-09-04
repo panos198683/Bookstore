@@ -1,21 +1,18 @@
-import { useState } from "react";
+import React from "react";
 
-interface SearchBarProps {
+export function SearchBar({
+  query,
+  setQuery,
+  onSearch,
+}: {
+  query: string;
+  setQuery: (query: string) => void;
   onSearch: (query: string) => void;
-}
-
-export default function SearchBar({ onSearch }: SearchBarProps) {
-  const [query, setQuery] = useState("");
-
+}) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
-    onSearch(e.target.value);
-  };
-
-  const handleSearch = () => {
-    if (onSearch) {
-      onSearch(query);
-    }
+    const newQuery = e.target.value;
+    setQuery(newQuery); // Update the search query
+    onSearch(newQuery); // Trigger the search
   };
 
   return (
@@ -27,6 +24,12 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         placeholder="Search products..."
         className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
       />
+      <button
+        className="ml-4 bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm"
+        onClick={() => onSearch(query)}
+      >
+        Search
+      </button>
     </div>
   );
 }

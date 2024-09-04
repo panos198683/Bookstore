@@ -1,13 +1,8 @@
+import React from "react";
 import Image from "next/image"; // Importing Image component from Next.js
 import Link from "next/link";
 import { StarRating } from "../StarRating";
-
-interface ProductCardProps {
-  isbn: string;
-  title: string;
-  image: string;
-  rating: number;
-}
+import { ProductCardProps } from "@/types";
 
 export default function ProductCard({
   isbn,
@@ -21,7 +16,7 @@ export default function ProductCard({
         {/* Display the book image */}
         <div className="w-full h-48 mb-4 relative">
           <Image
-            src={image} // Use the image URL from JSON
+            src={image || ""} // Use the image URL from JSON
             alt={title}
             layout="fill"
             objectFit="contain"
@@ -34,7 +29,7 @@ export default function ProductCard({
         </h2>
         {/* Display star rating */}
         <div className="flex items-center">
-          <StarRating rating={rating} />
+          <StarRating rating={rating as number} />
         </div>
       </div>
     </Link>

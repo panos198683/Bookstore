@@ -1,13 +1,12 @@
 "use client";
+import React from "react";
 import { StarRating } from "@/components/StarRating";
 import { useBooks } from "../../../provider/BookContext";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { Params } from "@/types";
 
-interface Params {
-  id: string;
-}
 export default function BookDetailPage({ params }: { params: Params }) {
   const { books } = useBooks();
   const { id } = params; // Directly access the dynamic route parameter
@@ -62,7 +61,7 @@ export default function BookDetailPage({ params }: { params: Params }) {
           </div>
           <div className="flex flex-col gap-2 text-gray-700">
             <div>
-              <strong>Year:</strong> {new Date(book.published).getFullYear()}
+              <strong>Year:</strong> {book.year}
             </div>
             <div>
               <strong>Pages:</strong> {book.pages}
@@ -71,10 +70,11 @@ export default function BookDetailPage({ params }: { params: Params }) {
               <strong>Publisher:</strong> {book.publisher}
             </div>
             <div>
-              <strong>ISBN-10:</strong> {book.isbn.substring(0, 10)}
+              <strong>ISBN-10:</strong>{" "}
+              {book.isbn10 || book.isbn.substring(0, 10)}
             </div>
             <div>
-              <strong>ISBN-13:</strong> {book.isbn}
+              <strong>ISBN-13:</strong> {book.isbn13 || book.isbn}
             </div>
           </div>
           <div className="flex my-10 self-auto">

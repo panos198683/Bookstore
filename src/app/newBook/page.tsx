@@ -1,10 +1,25 @@
 "use client";
-import { Book } from "@/types";
-import { useEffect, useState } from "react";
-import { FaPlus } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import { Book, BookDetails, BookErrors } from "@/types";
+import { generateUniqueId, validateField } from "@/utils/bookutils";
+import { Modal } from "@/components/Modal";
 
 export default function AddBookPage() {
-  const [bookDetails, setBookDetails] = useState({
+  const [bookDetails, setBookDetails] = useState<BookDetails>({
+    title: "",
+    description: "",
+    categories: [],
+    author: "",
+    publisher: "",
+    year: 0,
+    pages: 0,
+    image: null || "", // image can be null initially
+    rating: 0, // rating is optional
+    isbn10: "",
+    isbn13: "",
+  });
+
+  const [errors, setErrors] = useState<BookErrors>({
     title: "",
     description: "",
     categories: "",
@@ -12,26 +27,13 @@ export default function AddBookPage() {
     publisher: "",
     year: "",
     pages: "",
-    image: "",
-    rating: "",
     isbn10: "",
     isbn13: "",
   });
 
-  const [errors, setErrors] = useState({
-    title: "",
-    description: "",
-    categories: "",
-    author: "",
-    publisher: "",
-    year: "",
-    pages: "",
-    isbn10: "",
-    isbn13: "",
-  });
-
-  const [books, setBooks] = useState<Book[]>([]); // Book list state
+  const [books, setBooks] = useState<Book[]>([]); // State for books
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
 
   useEffect(() => {
     // Load books from localStorage on page load
@@ -40,77 +42,8 @@ export default function AddBookPage() {
       setBooks(JSON.parse(storedBooks));
     }
   }, []);
-  const validateField = (name: string, value: string) => {
-    let error = "";
 
-    switch (name) {
-      case "title":
-        if (value.length < 10 || value.length > 120) {
-          error = "Title must be between 10 and 120 characters.";
-        }
-        if (!/^[A-Za-z0-9@”#&*! ]+$/.test(value)) {
-          error = "Title can include only these special characters: @”#&*!";
-        }
-        break;
-
-      case "description":
-        if (value.length > 512) {
-          error = "Description must be no more than 512 characters.";
-        }
-        if (!/^[A-Z]/.test(value)) {
-          error = "Description must start with an uppercase letter.";
-        }
-        break;
-
-      case "categories":
-        if (value.split(",").length > 4) {
-          error = "You can specify up to 4 categories.";
-        }
-        break;
-
-      case "author":
-        if (value.split(",").length > 3) {
-          error = "You can specify up to 3 authors.";
-        }
-        break;
-
-      case "publisher":
-        if (value.length < 5 || value.length > 60) {
-          error = "Publisher name must be between 5 and 60 characters.";
-        }
-        break;
-
-      case "year":
-        if (!/^\d{4}$/.test(value)) {
-          error = "Year must be a 4-digit number.";
-        }
-        break;
-
-      case "pages":
-        if (parseInt(value) > 9999) {
-          error = "Number of pages must be less than 9999.";
-        }
-        break;
-
-      case "isbn10":
-        if (!/^\d{10}$/.test(value)) {
-          error = "ISBN-10 must be a 10-digit number.";
-        }
-        break;
-
-      case "isbn13":
-        if (!/^\d{13}$/.test(value)) {
-          error = "ISBN-13 must be a 13-digit number.";
-        }
-        break;
-
-      default:
-        break;
-    }
-
-    return error;
-  };
-
+  // Handle form input changes
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -120,47 +53,74 @@ export default function AddBookPage() {
     setErrors({ ...errors, [name]: error });
   };
 
+  // Handle image upload
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setBookDetails({ ...bookDetails, image: file as any });
-      setImagePreview(URL.createObjectURL(file)); // Create a preview URL for the uploaded image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setBookDetails({ ...bookDetails, image: base64String });
+        setImagePreview(base64String); // Set the image preview
+      };
+      reader.readAsDataURL(file); // Convert the file to base64 string
     }
   };
 
+  // Prevent keyboard input for rating field, allowing only arrows, backspace, and delete
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const allowedKeys = ["ArrowUp", "ArrowDown", "Backspace", "Delete"];
+    if (!allowedKeys.includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("hello");
-    // Check if there are any validation errors
-    const isValid = Object.values(errors).every((error) => error === "");
-    if (isValid) {
-      // Add the new book to the list of books
-      const updatedBooks = [...books, bookDetails] as Book[];
-      setBooks(updatedBooks);
-
-      // Save the updated list to localStorage
-      localStorage.setItem("books", JSON.stringify(updatedBooks));
-
-      console.log("Book details submitted and saved:", updatedBooks);
-
-      // Optionally, reset the form after saving
-      setBookDetails({
-        title: "",
-        description: "",
-        categories: "",
-        author: "",
-        publisher: "",
-        year: "",
-        pages: "",
-        image: "",
-        rating: "",
-        isbn10: "",
-        isbn13: "",
-      });
-      setImagePreview(null);
-    } else {
-      console.error("Please correct the errors in the form before submitting.");
+    if (
+      !bookDetails.title ||
+      !bookDetails.author ||
+      !bookDetails.isbn10 ||
+      !bookDetails.isbn13
+    ) {
+      // Handle validation errors or return early
+      console.error("Missing required fields");
+      return;
     }
+    // Add a unique ID if the book doesn't have an ISBN-10 or ISBN-13
+    const newBook: Book = {
+      ...bookDetails, // Spread the book details
+      isbn: generateUniqueId(), // Generate a unique ID
+      image: bookDetails.image || "", // Default to empty string if image is missing
+      rating: bookDetails.rating || 0, // Parse rating, default to 0
+      subtitle: bookDetails.subtitle || "", // Ensure subtitle is a string
+      published: new Date().toISOString(), // Set a default published date if necessary
+      website: bookDetails.website || "", // Set a default website if necessary
+    } as Book; // Type assertion to ensure all required fields are present
+
+    const updatedBooks = [...books, newBook];
+    localStorage.setItem("books", JSON.stringify(updatedBooks));
+    setBooks(updatedBooks);
+    // Show modal to notify user
+    setIsModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setIsModalOpen(false); // Close modal
+    setImagePreview(null); // Clear image preview
+    setBookDetails({
+      title: "",
+      description: "",
+      categories: [],
+      author: "",
+      publisher: "",
+      year: 0,
+      pages: 0,
+      image: null,
+      rating: 0,
+      isbn10: "",
+      isbn13: "",
+    });
   };
 
   return (
@@ -168,6 +128,7 @@ export default function AddBookPage() {
       <h1 className="text-3xl font-bold mb-6">Add a New Book</h1>
 
       <form
+        name="form"
         onSubmit={handleSubmit}
         className="bg-white shadow-md rounded-lg p-6 mb-6 flex flex-col md:flex-row"
       >
@@ -386,6 +347,7 @@ export default function AddBookPage() {
               type="number"
               value={bookDetails.rating}
               onChange={handleInputChange}
+              onKeyDown={handleKeyDown} // Disable keyboard input except for allowed keys
               min="0"
               max="5"
               step="0.5"
@@ -445,20 +407,20 @@ export default function AddBookPage() {
           {/* Save Button */}
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 "
           >
             Save
           </button>
         </div>
       </form>
 
-      {/* Add Another Book Button */}
-      <button
-        onClick={() => console.log("Add another book")}
-        className="flex items-center mt-4 text-blue-600 hover:text-blue-700"
-      >
-        <FaPlus className="mr-2" /> Add Another Book
-      </button>
+      {/* Modal Component */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal} // Close modal handler
+        title="Book Added"
+        message="The book has been successfully added."
+      />
     </div>
   );
 }
